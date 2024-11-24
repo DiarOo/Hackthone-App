@@ -1,33 +1,63 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Keyboard } from 'react-native';
 
-export default function AIChatInterface() {
+export default function AIChatInterface({ route }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSend = () => {
-    if (inputText.trim() === '') return;
 
-    const userMessage = { id: Date.now(), text: inputText, user: true };
-    setMessages([...messages, userMessage]);
+  const { product } = route.params || {};
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage = { id: Date.now() + 1, text: getAIResponse(inputText), user: false };
+ 
+  useEffect(() => {
+    if (product) {
+      const initialMessage = `Can you tell me more about ${product.name}?`;
+      handleSend(initialMessage, false); 
+    }
+  }, [product]);
+
+  const handleSend = async (text, isUser = true) => {
+    if (!text.trim()) return;
+
+    const newMessage = { id: Date.now(), text, user: isUser };
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
+
+    if (isUser) {
+      setInputText('');
+      setLoading(true);
+
+      const aiResponse = await getAIResponse(text);
+      const aiMessage = { id: Date.now() + 1, text: aiResponse, user: false };
       setMessages((prevMessages) => [...prevMessages, aiMessage]);
-    }, 1000);
-
-    setInputText('');
+      setLoading(false);
+    }
   };
 
-  const getAIResponse = (input) => {
-    // This is a very basic simulation of AI responses
-    if (input.toLowerCase().includes('recommend')) {
-      return "Based on your shopping history, I'd recommend the AI-Enhanced Smartwatch. It's our top-rated product!";
-    } else if (input.toLowerCase().includes('price')) {
-      return "Our prices are competitive and offer great value. Is there a specific product you're interested in?";
-    } else {
-      return "How can I assist you with your shopping today?";
+  const getAIResponse = async (input) => {
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer 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`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [{ role: "user", content: input }],
+        }),
+      });
+
+      if (!response.ok) {
+        // Handle API errors
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content.trim() || 'Sorry, I could not process your request.';
+    } catch (error) {
+      console.error('Error fetching AI response:', error);
+      return error.toString();
     }
   };
 
@@ -43,15 +73,21 @@ export default function AIChatInterface() {
           </View>
         )}
       />
+      {loading && <ActivityIndicator size="large" color="#4a90e2" style={styles.loadingIndicator} />}
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
           value={inputText}
           onChangeText={setInputText}
           placeholder="Ask me anything..."
+          onSubmitEditing={() => {
+            handleSend(inputText);
+            Keyboard.dismiss();
+          }}
+          blurOnSubmit={false} 
         />
-        <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-          <Text style={styles.sendButtonText}>Send</Text>
+        <TouchableOpacity style={styles.sendButton} onPress={() => handleSend(inputText)} disabled={loading}>
+          <Text style={styles.sendButtonText}>{loading ? '...' : 'Send'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -108,5 +144,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  loadingIndicator: {
+    marginVertical: 10,
+  },
 });
-

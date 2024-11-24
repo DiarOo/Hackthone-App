@@ -3,15 +3,33 @@ import { View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import Header from './components/Header';
 import ProductList from './components/ProductList';
+import ProductDetails from './components/ProductDetails';
 import AIChatInterface from './components/AIChatInterface';
-import Icon from 'react-native-vector-icons/Ionicons'; // Import the desired icon set
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
 
-// Main Screen combines Header and ProductList
-const MainScreen = () => (
+// Product stack for navigation between ProductList and ProductDetails
+const ProductStack = () => (
+  <Stack.Navigator>
+    <Stack.Screen
+      name="ProductList"
+      component={ProductListWithHeader}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="ProductDetails"
+      component={ProductDetails}
+      options={{ title: 'Product Details' }}
+    />
+  </Stack.Navigator>
+);
+
+const ProductListWithHeader = () => (
   <View style={styles.mainScreenContainer}>
     <Header />
     <ProductList />
@@ -27,8 +45,7 @@ export default function App() {
             tabBarIcon: ({ focused, color, size }) => {
               let iconName;
 
-              // Assign icons based on the route name
-              if (route.name === 'Product') {
+              if (route.name === 'Products') {
                 iconName = focused ? 'cart' : 'cart-outline';
               } else if (route.name === 'AI Chat') {
                 iconName = focused ? 'chatbox' : 'chatbox-outline';
@@ -36,25 +53,19 @@ export default function App() {
 
               return <Icon name={iconName} size={size} color={color} />;
             },
-            tabBarActiveTintColor: 'tomato',
+            tabBarActiveTintColor: '#4a90e2',
             tabBarInactiveTintColor: 'gray',
-            tabBarStyle: {
-              backgroundColor: '#fff', // Customize tab bar background
-              borderTopWidth: 0.5,
-              borderTopColor: '#ccc',
-            },
           })}
         >
-          {/* Tabs */}
           <Tab.Screen
-            name="Product"
-            component={MainScreen}
-            options={{ headerShown: false }} // Hide header for this screen
+            name="Products"
+            component={ProductStack}
+            options={{ headerShown: false }}
           />
           <Tab.Screen
             name="AI Chat"
             component={AIChatInterface}
-            options={{ headerTitle: 'AI Chat Interface' }} // Customize header title
+            options={{ headerTitle: 'AI Chat Interface' }}
           />
         </Tab.Navigator>
       </NavigationContainer>
@@ -65,7 +76,7 @@ export default function App() {
 const styles = StyleSheet.create({
   mainScreenContainer: {
     flex: 1,
-    backgroundColor: '#f0f0f0', // Light background for the main screen
+    backgroundColor: '#f0f0f0',
     padding: 10,
   },
 });
