@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Keyboard } from 'react-native';
-
+import {API_KEY} from "@env";
 export default function AIChatInterface({ route }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
@@ -39,7 +39,7 @@ export default function AIChatInterface({ route }) {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer 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`,
+          Authorization: `Bearer ${API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
